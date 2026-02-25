@@ -1,158 +1,135 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './App.css'
+import { api } from './api'
+
+// Моковые данные
+const mockMails = [
+  {
+    id: 1,
+    date: '2026-02-25',
+    full_name: 'Иванов Иван Иванович',
+    sender: 'ООО "ГазПрибор"',
+    tel_number: '+7 (999) 123-45-67',
+    email: 'ivanov@gazpribor.ru',
+    factory_nums: 'ГН-2024-001, ГН-2024-002',
+    device_type: 'Газонализатор ГН-4',
+    emotional_color: 'Негатив',
+    question: 'Прибор показывает неверные данные после калибровки'
+  },
+  {
+    id: 2,
+    date: '2026-02-24',
+    full_name: 'Петрова Анна Сергеевна',
+    sender: 'АО "ЭнергоСеть"',
+    tel_number: '+7 (999) 765-43-21',
+    email: 'petrova@energoset.ru',
+    factory_nums: 'ГН-2023-089',
+    device_type: 'Газонализатор ГН-3',
+    emotional_color: 'Нейтрально',
+    question: 'Требуется консультация по настройке оборудования'
+  },
+  {
+    id: 3,
+    date: '2026-02-23',
+    full_name: 'Сидоров Петр Александрович',
+    sender: 'ИП Сидоров П.А.',
+    tel_number: '+7 (999) 111-22-33',
+    email: 'sidorov@mail.ru',
+    factory_nums: 'ГН-2024-015',
+    device_type: 'Газонализатор ГН-4',
+    emotional_color: 'Позитив',
+    question: 'Благодарность за быстрое решение предыдущей проблемы'
+  }
+]
 
 function App() {
-  // Моковые данные (потом заменим на данные с бэкенда)
-  const [tickets, setTickets] = useState([
-    {
-      id: 1,
-      subject: "Не могу войти в аккаунт",
-      body: "Пользователь не может авторизоваться, получает ошибку 403...",
-      category: "Авторизация",
-      status: "new",
-      createdAt: "2026-02-25 10:30"
-    },
-    {
-      id: 2,
-      subject: "Ошибка при оплате",
-      body: "При оплате картой происходит сброс транзакции...",
-      category: "Биллинг",
-      status: "in_progress",
-      createdAt: "2026-02-25 11:15"
-    },
-    {
-      id: 3,
-      subject: "Не работает экспорт данных",
-      body: "При попытке экспорта в CSV файл не скачивается...",
-      category: "Функционал",
-      status: "done",
-      createdAt: "2026-02-25 09:00"
+  const [mails, setMails] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [useMock, setUseMock] = useState(false)
+
+  // Загружаем письма при первом рендере компонента
+  useEffect(() => {
+    loadMails()
+  }, [])
+
+  const loadMails = async () => {
+    try {
+      setLoading(true)
+      const data = await api.getMails()
+      setMails(data)
+      setUseMock(false)
+    } catch (err) {
+      console.warn('Бэкенд недоступен, используем mock-данные:', err)
+      setMails(mockMails)
+      setUseMock(true)
+    } finally {
+      setLoading(false)
     }
-  ])
-
-  const [showAddForm, setShowAddForm] = useState(false)
-  const [newTicket, setNewTicket] = useState({
-    subject: '',
-    body: '',
-    category: ''
-  })
-
-  // Функция добавления новой заявки
-  const handleAddTicket = (e) => {
-    e.preventDefault()
-    const ticket = {
-      id: tickets.length + 1,
-      ...newTicket,
-      status: 'new',
-      createdAt: new Date().toISOString().slice(0, 16).replace('T', ' ')
-    }
-    setTickets([...tickets, ticket])
-    setNewTicket({ subject: '', body: '', category: '' })
-    setShowAddForm(false)
-  }
-
-  // Функция изменения статуса
-  const changeStatus = (id, newStatus) => {
-    setTickets(tickets.map(ticket => 
-      ticket.id === id ? { ...ticket, status: newStatus } : ticket
-    ))
-  }
-
-  // Статусы для отображения
-  const statusLabels = {
-    new: ' Новая',
-    in_progress: '⏳ В работе',
-    done: '✅ Выполнена'
   }
 
   const statusColors = {
-    new: '#ff6b6b',
-    in_progress: '#4ecdc4',
-    done: '#95e1d3'
+    Позитив: '#48bb78',
+    Нейтраль: '#4299e1',
+    Негатив: '#f56565'
+  }
+
+  // Показываем индикатор загрузки
+  if (loading) {
+    return (
+      <div className="app">
+        <header className="header">
+          <h1>Система обработки обращений</h1>
+          <p>Загрузка данных...</p>
+        </header>
+      </div>
+    )
   }
 
   return (
     <div className="app">
       <header className="header">
-        <h1>🎫 Система техподдержки</h1>
-        <p>AI-агент для обработки писем</p>
+        <h1>Система обработки обращений</h1>
+        <p>AI-агент для анализа писем технической поддержки</p>
       </header>
 
-      <div className="controls">
-        <button 
-          className="btn-primary" 
-          onClick={() => setShowAddForm(!showAddForm)}
-        >
-          {showAddForm ? '✖ Отмена' : '+ Добавить заявку'}
-        </button>
-      </div>
-
-      {/* Форма добавления */}
-      {showAddForm && (
-        <form className="add-form" onSubmit={handleAddTicket}>
-          <input
-            type="text"
-            placeholder="Тема письма"
-            value={newTicket.subject}
-            onChange={(e) => setNewTicket({...newTicket, subject: e.target.value})}
-            required
-          />
-          <textarea
-            placeholder="Текст письма"
-            value={newTicket.body}
-            onChange={(e) => setNewTicket({...newTicket, body: e.target.value})}
-            required
-            rows="3"
-          />
-          <input
-            type="text"
-            placeholder="Категория (AI)"
-            value={newTicket.category}
-            onChange={(e) => setNewTicket({...newTicket, category: e.target.value})}
-          />
-          <button type="submit" className="btn-success">💾 Сохранить</button>
-        </form>
-      )}
-
-      {/* Таблица заявок */}
+      {/* Таблица обращений */}
       <div className="table-container">
         <table className="tickets-table">
           <thead>
             <tr>
-              <th>ID</th>
-              <th>Тема</th>
-              <th>Категория (AI)</th>
-              <th>Статус</th>
-              <th>Дата создания</th>
-              <th>Действия</th>
+              <th >ID</th>
+              <th>Дата</th>
+              <th>Отправитель</th>
+              <th>Предприятие</th>
+              <th>Телефон</th>
+              <th>Email</th>
+              <th>Приборы</th>
+              <th>Тип устройства</th>
+              <th>Эмоциональный окрас письма</th>
+              <th>Проблема</th>
             </tr>
           </thead>
           <tbody>
-            {tickets.map((ticket) => (
-              <tr key={ticket.id}>
-                <td>{ticket.id}</td>
+            {mails.map((mail) => (
+              <tr key={mail.id}>
+                <td style={{ color: '#000000', fontWeight: '600' }}>{mail.id}</td>
+                <td>{mail.date}</td>
+                <td>{mail.full_name}</td>
+                <td>{mail.sender}</td>
+                <td>{mail.tel_number}</td>
+                <td>{mail.email}</td>
+                <td>{mail.factory_nums}</td>
+                <td>{mail.device_type}</td>
                 <td>
-                  <div className="subject">{ticket.subject}</div>
-                  <div className="body-preview">{ticket.body}</div>
-                </td>
-                <td>
-                  <span className="category-badge">{ticket.category}</span>
-                </td>
-                <td>
-                  <select
-                    className="status-select"
-                    value={ticket.status}
-                    onChange={(e) => changeStatus(ticket.id, e.target.value)}
-                    style={{ borderColor: statusColors[ticket.status] }}
+                  <span 
+                    className="category-badge" 
+                    style={{ borderColor: statusColors[mail.emotional_color] }}
                   >
-                    <option value="new">Новая</option>
-                    <option value="in_progress">В работе</option>
-                    <option value="done">Выполнена</option>
-                  </select>
+                    {mail.emotional_color}
+                  </span>
                 </td>
-                <td>{ticket.createdAt}</td>
                 <td>
-                  <button className="btn-action">📧 Ответить</button>
+                  <div className="body-preview">{mail.question}</div>
                 </td>
               </tr>
             ))}
@@ -162,15 +139,19 @@ function App() {
 
       <div className="stats">
         <div className="stat-item">
-          <span className="stat-number">{tickets.filter(t => t.status === 'new').length}</span>
-          <span className="stat-label">Новых заявок</span>
+          <span className="stat-number">{mails.filter(m => m.emotional_color === 'Негатив').length}</span>
+          <span className="stat-label">Негативных</span>
         </div>
         <div className="stat-item">
-          <span className="stat-number">{tickets.filter(t => t.status === 'in_progress').length}</span>
-          <span className="stat-label">В работе</span>
+          <span className="stat-number">{mails.filter(m => m.emotional_color === 'Нейтраль').length}</span>
+          <span className="stat-label">Нейтральных</span>
         </div>
         <div className="stat-item">
-          <span className="stat-number">{tickets.length}</span>
+          <span className="stat-number">{mails.filter(m => m.emotional_color === 'Позитив').length}</span>
+          <span className="stat-label">Позитивных</span>
+        </div>
+        <div className="stat-item">
+          <span className="stat-number">{mails.length}</span>
           <span className="stat-label">Всего</span>
         </div>
       </div>
