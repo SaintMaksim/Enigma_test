@@ -12,3 +12,10 @@ class Mail(models.Model):
     device_type = models.CharField('Модель или тип устройства')
     emotional_color = models.CharField('Анализ тональности (позитив/нейтраль/негатив)')
     question = models.TextField('Краткое описание проблемы или запроса')
+
+    class Meta:
+        verbose_name = 'письмо'
+        verbose_name_plural = 'Письма'
+
+    def __str__(self):
+        return f'{self.date} - {self.full_name}'
