@@ -1,12 +1,11 @@
 from django.db import models
-from phonenumber_field.modelfields import PhoneNumberField
 
 
 class Mail(models.Model):
     date = models.DateField('Дата поступления письма')
     full_name = models.CharField('Фамилия, имя, отчество отправителя', max_length=50)
     sender = models.CharField('Название предприятия или объекта, откуда поступило обращение', max_length=50)
-    tel_number = PhoneNumberField('Контактный номер телефона')
+    tel_number = models.CharField('Контактный номер телефона')
     email = models.EmailField('Адрес электронной почты отправителя')
     factory_nums = models.CharField('Номера приборов (газонализаторов), указанные в письме', max_length=50)
     device_type = models.CharField('Модель или тип устройства', max_length=50)
